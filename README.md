@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/logo.png" alt="HDHomeRun Free Guide logo" width="180"></p>
+
 # HDHomeRun Free Guide
 
 A Jellyfin 12.1 plugin that downloads the free two-day HDHomeRun TV guide and keeps it updated. You'll need a physical HDHomeRun tuner. No SiliconDust account or subscription is needed.

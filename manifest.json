@@ -15,6 +15,7 @@
     "category": "Live TV",
     "overview": "Free two-day guide with fresh DeviceAuth, gzip support, automatic registration and randomized background downloads.",
     "description": "Automatic HDHomeRun XMLTV guide using tuner authorization. No email required.",
-    "name": "HDHomeRun Free Guide"
+    "name": "HDHomeRun Free Guide",
+    "imageUrl": "https://raw.githubusercontent.com/aober420/jellyfin-hdhomerun-free-guide/main/assets/logo.png"
   }
 ]
