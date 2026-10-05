@@ -18,12 +18,18 @@ public sealed class DownloadTask(IConfigurationManager configuration, IApplicati
  try {
  var folder=Path.Combine(paths.DataPath,"hdhomerun-free-guide"); Directory.CreateDirectory(folder);
  var guide=Path.Combine(folder,"guide.xml"); var schedule=Path.Combine(folder,"next-download.txt");
- if(File.Exists(guide)&&File.Exists(schedule)&&DateTimeOffset.TryParse(await File.ReadAllTextAsync(schedule,cancellationToken),out var next)&&next>DateTimeOffset.UtcNow){progress.Report(100);return;}
  var options=configuration.GetConfiguration<LiveTvOptions>("livetv");
+ if(File.Exists(guide)) {
+  ValidateGuide(await File.ReadAllTextAsync(guide,cancellationToken));
+  if(RegisterGuide(options,guide)) QueueRefresh();
+ }
+ if(File.Exists(guide)&&File.Exists(schedule)&&DateTimeOffset.TryParse(await File.ReadAllTextAsync(schedule,cancellationToken),out var next)&&next>DateTimeOffset.UtcNow){progress.Report(100);return;}
  var urls=options.TunerHosts.Where(t=>string.Equals(t.Type,"hdhomerun",StringComparison.OrdinalIgnoreCase)).Select(t=>t.Url)
  .Concat((Plugin.Instance?.Configuration.TunerUrls??"").Split(',',StringSplitOptions.TrimEntries|StringSplitOptions.RemoveEmptyEntries)).Where(u=>!string.IsNullOrWhiteSpace(u)).Distinct().ToArray();
  if(urls.Length==0)throw new InvalidOperationException("Add an HDHomeRun tuner in Live TV or enter its address in plugin settings.");
  using var client=new HttpClient(new HttpClientHandler{AutomaticDecompression=DecompressionMethods.GZip|DecompressionMethods.Deflate}){Timeout=TimeSpan.FromMinutes(3)};
+ client.DefaultRequestHeaders.UserAgent.ParseAdd("HDHomeRunFreeGuide/1.0.1");
+ client.DefaultRequestHeaders.Accept.ParseAdd("*/*");
  var auths=new SortedDictionary<string,string>(StringComparer.OrdinalIgnoreCase);
  foreach(var raw in urls){
  var baseUrl=raw.Contains("://",StringComparison.Ordinal)?raw:"http://"+raw;
@@ -40,19 +46,26 @@ public sealed class DownloadTask(IConfigurationManager configuration, IApplicati
  // Never log or persist the authorization URL. Fetch new keys for every download.
  var requestUrl="https://api.hdhomerun.com/api/xmltv?DeviceAuth="+Uri.EscapeDataString(string.Concat(auths.Values));
  string xml;
- try{using var response=await client.GetAsync(requestUrl,cancellationToken);if(!response.IsSuccessStatusCode)throw new InvalidOperationException("Guide service rejected the request. Previous guide retained.");xml=await response.Content.ReadAsStringAsync(cancellationToken);}
+ try{using var response=await client.GetAsync(requestUrl,cancellationToken);if(!response.IsSuccessStatusCode)throw new InvalidOperationException($"SiliconDust guide service returned HTTP {(int)response.StatusCode} ({response.StatusCode}). Previous guide retained. The tuner was reached and supplied authorization.");xml=await response.Content.ReadAsStringAsync(cancellationToken);}
  catch(HttpRequestException){throw new InvalidOperationException("Guide service could not be reached. Previous guide retained.");}
  ValidateGuide(xml);
  progress.Report(70);
  var temporary=guide+".tmp";
  await File.WriteAllTextAsync(temporary,xml,cancellationToken);File.Move(temporary,guide,true);
- var provider=options.ListingProviders.FirstOrDefault(p=>string.Equals(p.Path,guide,StringComparison.OrdinalIgnoreCase));
- if(provider is null){options.ListingProviders=options.ListingProviders.Append(new ListingsProviderInfo{Id=Guid.NewGuid().ToString("N"),Type="xmltv",Path=guide,EnableAllTuners=false,EnabledTuners=options.TunerHosts.Where(t=>string.Equals(t.Type,"hdhomerun",StringComparison.OrdinalIgnoreCase)).Select(t=>t.Id).ToArray()}).ToArray();configuration.SaveConfiguration("livetv",options);}
- var worker=tasks.ScheduledTasks.FirstOrDefault(w=>w.ScheduledTask.Key=="RefreshGuide");
- if(worker is not null)tasks.QueueScheduledTask(worker.ScheduledTask,new TaskOptions());
+ RegisterGuide(options,guide);
+ QueueRefresh();
  await File.WriteAllTextAsync(schedule,DateTimeOffset.UtcNow.AddHours(20+Random.Shared.NextDouble()*8).ToString("O"),cancellationToken);
  progress.Report(100);
  }finally{Gate.Release();}
+ }
+ private bool RegisterGuide(LiveTvOptions options,string guide){
+  if(options.ListingProviders.Any(p=>string.Equals(p.Path,guide,StringComparison.OrdinalIgnoreCase)))return false;
+  options.ListingProviders=options.ListingProviders.Append(new ListingsProviderInfo{Id=Guid.NewGuid().ToString("N"),Type="xmltv",Path=guide,EnableAllTuners=false,EnabledTuners=options.TunerHosts.Where(t=>string.Equals(t.Type,"hdhomerun",StringComparison.OrdinalIgnoreCase)).Select(t=>t.Id).ToArray()}).ToArray();
+  configuration.SaveConfiguration("livetv",options);return true;
+ }
+ private void QueueRefresh(){
+  var worker=tasks.ScheduledTasks.FirstOrDefault(w=>w.ScheduledTask.Key=="RefreshGuide");
+  if(worker is not null)tasks.QueueScheduledTask(worker.ScheduledTask,new TaskOptions());
  }
  public static void ValidateGuide(string xml){
  using var reader=XmlReader.Create(new StringReader(xml),new XmlReaderSettings{DtdProcessing=DtdProcessing.Ignore,XmlResolver=null,MaxCharactersInDocument=100_000_000});
