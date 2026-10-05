@@ -1,11 +1,16 @@
 [
   {
-    "imageUrl": "https://raw.githubusercontent.com/aober420/jellyfin-hdhomerun-free-guide/main/assets/logo.png",
     "category": "Live TV",
-    "owner": "aober420",
-    "guid": "94079c51-6e85-4483-8b34-85b162638f75",
-    "description": "Automatic HDHomeRun XMLTV guide using tuner authorization. No email required.",
+    "name": "HDHomeRun Free Guide",
     "versions": [
+      {
+        "version": "1.0.2.0",
+        "sourceUrl": "https://github.com/aober420/jellyfin-hdhomerun-free-guide/releases/download/v1.0.2/HDHomeRunFreeGuide_1.0.2.0.zip",
+        "timestamp": "2026-10-05T14:45:49.5481024Z",
+        "checksum": "ae71b11732fe32c5e1c4cc8c858a22d5",
+        "targetAbi": "12.1.0.0",
+        "changelog": "## ✨ New Features\n\n- **Force download:** Run **Force Download HDHomeRun Free Guide** under Scheduled Tasks to fetch fresh guide data immediately after scanning for channels on your HDHomeRun.\n\n## 🎨 Improvements\n\n- **Automatic refresh:** A successful force download also refreshes the Jellyfin guide and schedules the next background download."
+      },
       {
         "sourceUrl": "https://github.com/aober420/jellyfin-hdhomerun-free-guide/releases/download/v1.0.1/HDHomeRunFreeGuide_1.0.1.0.zip",
         "checksum": "b959911b35fb6f34adec0382629d0f04",
@@ -23,7 +28,10 @@
         "version": "1.0.0.0"
       }
     ],
-    "overview": "Free two-day guide with fresh DeviceAuth, gzip support, automatic registration and randomized background downloads.",
-    "name": "HDHomeRun Free Guide"
+    "imageUrl": "https://raw.githubusercontent.com/aober420/jellyfin-hdhomerun-free-guide/main/assets/logo.png",
+    "description": "Automatic HDHomeRun XMLTV guide using tuner authorization. No email required.",
+    "owner": "aober420",
+    "guid": "94079c51-6e85-4483-8b34-85b162638f75",
+    "overview": "Free two-day guide with fresh DeviceAuth, gzip support, automatic registration and randomized background downloads."
   }
 ]

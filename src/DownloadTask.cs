@@ -13,7 +13,8 @@ public sealed class DownloadTask(IConfigurationManager configuration, IApplicati
  public string Description => "Downloads the free HDHomeRun XMLTV guide using fresh tuner authorization; checks hourly and downloads every 20–28 hours.";
  public string Category => "Live TV";
  public IEnumerable<TaskTriggerInfo> GetDefaultTriggers() => [new(){Type=TaskTriggerInfoType.StartupTrigger},new(){Type=TaskTriggerInfoType.IntervalTrigger,IntervalTicks=TimeSpan.FromHours(1).Ticks}];
- public async Task ExecuteAsync(IProgress<double> progress,CancellationToken cancellationToken){
+ public Task ExecuteAsync(IProgress<double> progress,CancellationToken cancellationToken) => ExecuteDownloadAsync(progress,cancellationToken,false);
+ public async Task ExecuteDownloadAsync(IProgress<double> progress,CancellationToken cancellationToken,bool force,HttpClient? httpClient = null){
  await Gate.WaitAsync(cancellationToken);
  try {
  var folder=Path.Combine(paths.DataPath,"hdhomerun-free-guide"); Directory.CreateDirectory(folder);
@@ -23,12 +24,13 @@ public sealed class DownloadTask(IConfigurationManager configuration, IApplicati
   ValidateGuide(await File.ReadAllTextAsync(guide,cancellationToken));
   if(RegisterGuide(options,guide)) QueueRefresh();
  }
- if(File.Exists(guide)&&File.Exists(schedule)&&DateTimeOffset.TryParse(await File.ReadAllTextAsync(schedule,cancellationToken),out var next)&&next>DateTimeOffset.UtcNow){progress.Report(100);return;}
+ if(!force&&File.Exists(guide)&&File.Exists(schedule)&&DateTimeOffset.TryParse(await File.ReadAllTextAsync(schedule,cancellationToken),out var next)&&next>DateTimeOffset.UtcNow){progress.Report(100);return;}
  var urls=options.TunerHosts.Where(t=>string.Equals(t.Type,"hdhomerun",StringComparison.OrdinalIgnoreCase)).Select(t=>t.Url)
  .Concat((Plugin.Instance?.Configuration.TunerUrls??"").Split(',',StringSplitOptions.TrimEntries|StringSplitOptions.RemoveEmptyEntries)).Where(u=>!string.IsNullOrWhiteSpace(u)).Distinct().ToArray();
  if(urls.Length==0)throw new InvalidOperationException("Add an HDHomeRun tuner in Live TV or enter its address in plugin settings.");
- using var client=new HttpClient(new HttpClientHandler{AutomaticDecompression=DecompressionMethods.GZip|DecompressionMethods.Deflate}){Timeout=TimeSpan.FromMinutes(3)};
- client.DefaultRequestHeaders.UserAgent.ParseAdd("HDHomeRunFreeGuide/1.0.1");
+ using var ownedClient=httpClient is null ? new HttpClient(new HttpClientHandler{AutomaticDecompression=DecompressionMethods.GZip|DecompressionMethods.Deflate}){Timeout=TimeSpan.FromMinutes(3)} : null;
+ var client=httpClient??ownedClient!;
+ client.DefaultRequestHeaders.UserAgent.ParseAdd("HDHomeRunFreeGuide/1.0.2");
  client.DefaultRequestHeaders.Accept.ParseAdd("*/*");
  var auths=new SortedDictionary<string,string>(StringComparer.OrdinalIgnoreCase);
  foreach(var raw in urls){
