@@ -1,6 +1,6 @@
 param(
     [Parameter(Mandatory)] [string] $Repository,
-    [string] $Changelog = 'Resolved an issue where a saved guide was not registered when the next download was not due. Improved error reporting for guide downloads and added standard request headers.'
+    [string] $Changelog
 )
 $ErrorActionPreference = 'Stop'
 if ($Repository -notmatch '^[A-Za-z0-9-]+/[A-Za-z0-9_.-]+$') { throw 'Use owner/repository for Repository.' }
@@ -10,6 +10,11 @@ $project = [xml](Get-Content "$PSScriptRoot/src/FreeGuide.csproj" -Raw)
 $releaseVersion = [string]$project.Project.PropertyGroup.Version
 if ($releaseVersion -notmatch '^\d+\.\d+\.\d+$') { throw 'The project version must have three parts, such as 1.0.1.' }
 $pluginVersion = "$releaseVersion.0"
+if ([string]::IsNullOrWhiteSpace($Changelog)) {
+    $notesPath = "$PSScriptRoot/release-notes/$releaseVersion.md"
+    if (-not (Test-Path $notesPath)) { throw "Add release notes at $notesPath or provide -Changelog." }
+    $Changelog = (Get-Content $notesPath -Raw).Trim()
+}
 $manifestPath = "$PSScriptRoot/manifest.json"
 $pluginId = '94079c51-6e85-4483-8b34-85b162638f75'
 $existingPlugins = if (Test-Path $manifestPath) { @(Get-Content $manifestPath -Raw | ConvertFrom-Json) } else { @() }
