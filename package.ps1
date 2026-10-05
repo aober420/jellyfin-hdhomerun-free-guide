@@ -1,6 +1,6 @@
 param(
     [Parameter(Mandatory)] [string] $Repository,
-    [string] $Changelog = 'Restore cached guide registration and report guide service HTTP errors.'
+    [string] $Changelog = 'Resolved an issue where a saved guide was not registered when the next download was not due. Improved error reporting for guide downloads and added standard request headers.'
 )
 $ErrorActionPreference = 'Stop'
 if ($Repository -notmatch '^[A-Za-z0-9-]+/[A-Za-z0-9_.-]+$') { throw 'Use owner/repository for Repository.' }
