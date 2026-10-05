@@ -4,14 +4,15 @@ A Jellyfin 12.1 plugin that downloads the free two-day HDHomeRun TV guide and ke
 
 ## Installation
 
-1. Add your HDHomeRun under **Dashboard → Live TV → Tuner Devices**.
-2. Open **Dashboard → Plugins → Repositories** and add this URL:
+Add your HDHomeRun under **Dashboard → Live TV → Tuner Devices**.
 
-   ```text
-   https://raw.githubusercontent.com/aober420/jellyfin-hdhomerun-free-guide/main/manifest.json
-   ```
+Open **Dashboard → Plugins → Repositories** and add this repository URL:
 
-3. Install **HDHomeRun Free Guide** from the plugin catalog and restart Jellyfin.
+```text
+https://raw.githubusercontent.com/aober420/jellyfin-hdhomerun-free-guide/main/manifest.json
+```
+
+Install **HDHomeRun Free Guide** from the plugin catalog and restart Jellyfin.
 
 The plugin downloads the guide on startup and adds it to Live TV. After that, it updates roughly once a day. You can run **Download HDHomeRun Free Guide** from **Scheduled Tasks** if you need to check it yourself. Some channels may need to be mapped in Jellyfin's guide settings.
 
